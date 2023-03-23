@@ -52,20 +52,9 @@ const todoApi = (url) => {
 
 
 
-            allAuthor.addEventListener('click', () => converToPagination(json))
-            userApi('https://jsonplaceholder.typicode.com/users')
-                .then(dataUser => {
-                    dataUser.forEach(({ name, id }) => {
-                        const author = userTag(name, id)
-                        userList.appendChild(author)
-                        author.addEventListener('click', (e) => {
-                            const id = e.target.dataset.id
-                            const autherTodo = json.filter(u => u.userId === parseInt(id))
-                            converToPagination(autherTodo)
-                        })
 
-                    })
-                })
+
+            return json;
 
         })
 
@@ -136,3 +125,20 @@ userApi = (url) => {
     return data
 }
 
+userApi('https://jsonplaceholder.typicode.com/users')
+    .then(dataUser => {
+        dataUser.forEach(({ name, id }) => {
+            const author = userTag(name, id)
+            userList.appendChild(author)
+            todoApi('https://jsonplaceholder.typicode.com/todos')
+                .then(json => {
+                    allAuthor.addEventListener('click', () => converToPagination(json))
+                    author.addEventListener('click', (e) => {
+                        const id = e.target.dataset.id
+                        const autherTodo = json.filter(u => u.userId === parseInt(id))
+                        converToPagination(autherTodo)
+                    })
+                })
+
+        })
+    })
