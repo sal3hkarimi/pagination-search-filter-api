@@ -1,6 +1,8 @@
 const todoBox = document.querySelector('.todo-box')
 const btnPagination = document.querySelector('.btn-pagination ul')
 const inputSearch = document.querySelector('.search')
+const userList = document.getElementById('users')
+
 
 const todo = (text, check) => {
     return (`
@@ -13,12 +15,23 @@ const todo = (text, check) => {
 
 
 const btn = (number) => {
-    const li = document.createElement('li')
-    const link = document.createElement('link')
     return (`
         <li><a class="btn" onClick="changeState(${number})" href="#">${number}</a></li>
     `)
 }
+
+
+const userTag = (name, id) => {
+    const option = document.createElement("option");
+    option.setAttribute("class", "author");
+    option.setAttribute("data-id", id);
+    option.textContent = name
+    return option
+}
+const allAuthor = userTag('All', 0)
+userList.appendChild(allAuthor)
+
+
 
 const state = {
     currentPage: 1,
@@ -26,7 +39,7 @@ const state = {
 }
 
 
-const api = (url) => {
+const todoApi = (url) => {
     let data = fetch(url)
         .then(res => res.json())
         .then(json => {
@@ -35,23 +48,42 @@ const api = (url) => {
                 const searchList = search(json, e.target.value)
                 converToPagination(searchList)
             })
+
+
+
+
+            allAuthor.addEventListener('click', () => converToPagination(json))
+            userApi('https://jsonplaceholder.typicode.com/users')
+                .then(dataUser => {
+                    dataUser.forEach(({ name, id }) => {
+                        const author = userTag(name, id)
+                        userList.appendChild(author)
+                        author.addEventListener('click', (e) => {
+                            const id = e.target.dataset.id
+                            const autherTodo = json.filter(u => u.userId === parseInt(id))
+                            converToPagination(autherTodo)
+                        })
+
+                    })
+                })
+
         })
 
 
     return data
 }
 
-api('https://jsonplaceholder.typicode.com/todos')
+todoApi('https://jsonplaceholder.typicode.com/todos')
 
 
 function changeState(number) {
     state.currentPage = number
-    api('https://jsonplaceholder.typicode.com/todos')
+    todoApi('https://jsonplaceholder.typicode.com/todos')
 }
 
 function converToPagination(json) {
     let todos = pagination(json, state.numberPages)
-    let todosElement = ``
+    let todosElement = ""
     json.length ? todos[state.currentPage - 1].map(e => {
         todosElement += todo(e.title, e.completed)
     }) : todosElement
@@ -95,3 +127,12 @@ function search(array, text) {
     const findList = array.filter(e => e.title.includes(text))
     return findList
 }
+
+
+userApi = (url) => {
+    let data = fetch(url)
+        .then(response => response.json())
+        .then(json => json)
+    return data
+}
+
