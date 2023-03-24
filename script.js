@@ -14,11 +14,16 @@ const todo = (text, check) => {
 }
 
 
-const btn = (number) => {
-    return (`
-        <li><a class="btn" onClick="changeState(${number})" href="#">${number}</a></li>
-    `)
+btnPages = (number) => {
+    const li = document.createElement('li')
+    const a = document.createElement('a')
+    li.classList.add('btn-li')
+    a.classList.add('btn')
+    a.textContent = number
+    li.appendChild(a)
+    return li
 }
+
 
 
 const userTag = (name, id) => {
@@ -33,7 +38,9 @@ userList.appendChild(allAuthor)
 
 
 
+
 const state = {
+    url: 'https://jsonplaceholder.typicode.com/todos',
     currentPage: 1,
     numberPages: 15
 }
@@ -44,45 +51,48 @@ const todoApi = (url) => {
         .then(res => res.json())
         .then(json => {
             converToPagination(json)
-            inputSearch.addEventListener('keyup', (e) => {
-                const searchList = search(json, e.target.value)
-                converToPagination(searchList)
-            })
 
-
-
-
-
-
+            search(json)
             return json;
-
         })
 
 
     return data
 }
 
-todoApi('https://jsonplaceholder.typicode.com/todos')
+todoApi(state.url)
 
 
-function changeState(number) {
+function changeState(number, json) {
     state.currentPage = number
-    todoApi('https://jsonplaceholder.typicode.com/todos')
+    converToPagination(json)
+    state.currentPage = 1
 }
 
 function converToPagination(json) {
     let todos = pagination(json, state.numberPages)
     let todosElement = ""
+
     json.length ? todos[state.currentPage - 1].map(e => {
         todosElement += todo(e.title, e.completed)
     }) : todosElement
     todoBox.innerHTML = todosElement
 
-    let btns = ""
-    todos.forEach(t => {
-        btns += btn(todos.indexOf(t) + 1)
+    btnPagination.innerHTML = ''
+    todos.forEach((t, index) => {
+        const btnPage = btnPages(index + 1)
+        btnPagination.appendChild(btnPage)
+        // if(!Object.values(btnPagination.children).map(e=>e.outerHTML).includes(btnPage.outerHTML)){
+        // }
     })
-    btnPagination.innerHTML = btns
+    const btns = document.getElementsByClassName('btn-li')
+    Object.values(btns).map((e, index) => {
+        e.addEventListener('click', (e) => changeState(index + 1, json))
+    })
+    // .addEventListener('click', () => changeState(index + 1))
+
+    // search(json)
+
 }
 
 function pagination(data, ItemsPage) {
@@ -105,6 +115,7 @@ function pagination(data, ItemsPage) {
         for (let num = listPage[index]; num < listPage[index + 1]; num++) {
             listTmp.push(data[num])
         }
+
         listTmp.length ? pageData.push(listTmp) : null
         listTmp = []
     }
@@ -112,10 +123,14 @@ function pagination(data, ItemsPage) {
 }
 
 
-function search(array, text) {
-    const findList = array.filter(e => e.title.includes(text))
-    return findList
+function search(json) {
+    inputSearch.addEventListener('keyup', (evn) => {
+        const searchList = json.filter(e => e.title.includes(evn.target.value))
+        evn.key === 'Backspace' ? converToPagination(json) : converToPagination(searchList)
+    })
 }
+
+
 
 
 userApi = (url) => {
@@ -130,15 +145,16 @@ userApi('https://jsonplaceholder.typicode.com/users')
         dataUser.forEach(({ name, id }) => {
             const author = userTag(name, id)
             userList.appendChild(author)
-            todoApi('https://jsonplaceholder.typicode.com/todos')
-                .then(json => {
-                    allAuthor.addEventListener('click', () => converToPagination(json))
-                    author.addEventListener('click', (e) => {
+            allAuthor.addEventListener('click', () => todoApi(state.url).then(json => converToPagination(json)))
+            author.addEventListener('click', (e) => {
+                todoApi(state.url)
+                    .then(json => {
                         const id = e.target.dataset.id
                         const autherTodo = json.filter(u => u.userId === parseInt(id))
                         converToPagination(autherTodo)
                     })
-                })
+            })
 
         })
     })
+
